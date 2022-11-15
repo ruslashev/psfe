@@ -6,3 +6,6 @@ description = "PC Screen Font editor"
 edition = "2021"
 license = "Unlicense"
 repository = "https://github.com/ruslashev/psfe"
+
+[build-dependencies]
+bindgen = "0.61.0"
