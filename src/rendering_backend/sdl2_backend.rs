@@ -1,4 +1,4 @@
-use super::RenderingBackend;
+use super::{Event, RenderingBackend};
 use std::ffi::{c_int, c_void, CStr, CString};
 use std::mem::{size_of, MaybeUninit};
 use std::ptr;
@@ -32,7 +32,7 @@ impl Sdl2Backend {
     }
 
     #[allow(non_upper_case_globals)] // rust-lang/rust #39371
-    fn get_events(&mut self) -> bool {
+    fn get_events(&mut self, state: &mut State) -> bool {
         let mut event = MaybeUninit::uninit();
 
         unsafe {
@@ -41,6 +41,29 @@ impl Sdl2Backend {
 
                 match ret_event.type_ {
                     SDL_EventType_SDL_QUIT => return false,
+                    SDL_EventType_SDL_MOUSEMOTION => {
+                        let x = ret_event.motion.x;
+                        let y = ret_event.motion.y;
+                        let event = Event::MouseMotion(x, y);
+                        State::events(state, event)
+                    }
+                    SDL_EventType_SDL_MOUSEBUTTONDOWN => {
+                        let x = ret_event.button.x;
+                        let y = ret_event.button.y;
+                        let event = Event::MousePress(x, y);
+                        State::events(state, event)
+                    }
+                    SDL_EventType_SDL_MOUSEBUTTONUP => {
+                        let x = ret_event.button.x;
+                        let y = ret_event.button.y;
+                        let event = Event::MouseRelease(x, y);
+                        State::events(state, event)
+                    }
+                    SDL_EventType_SDL_MOUSEWHEEL => {
+                        let y = ret_event.wheel.y;
+                        let event = Event::MouseWheel(y);
+                        State::events(state, event)
+                    }
                     _ => continue,
                 }
             }
@@ -118,7 +141,7 @@ impl RenderingBackend for Sdl2Backend {
             while curr_time < real_time {
                 curr_time += dt;
 
-                running = self.get_events();
+                running = self.get_events(&mut state);
                 State::update(&mut state, curr_time, dt);
             }
 

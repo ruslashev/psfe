@@ -1,7 +1,11 @@
 use super::framebuffer::Framebuffer;
+use super::rendering_backend::Event;
 
 pub struct State {
     pub fb: Framebuffer,
+
+    mouse_x: u32,
+    mouse_y: u32,
 
     square_x: u32,
     square_y: u32,
@@ -11,6 +15,9 @@ impl State {
     pub fn new(fb_width: u32, fb_height: u32) -> Self {
         Self {
             fb: Framebuffer::new(fb_width, fb_height),
+
+            mouse_x: 10,
+            mouse_y: 10,
 
             square_x: 10,
             square_y: 10,
@@ -28,5 +35,22 @@ impl State {
         self.fb.draw_pixel(0, 2, 0xff00ff);
 
         self.fb.draw_square(self.square_x - 1, self.square_y - 1, 3, 0xff1010);
+
+        for i in 0..5 {
+            self.fb.draw_pixel(self.mouse_x - i, self.mouse_y, 0xffffff);
+            self.fb.draw_pixel(self.mouse_x + i, self.mouse_y, 0xffffff);
+            self.fb.draw_pixel(self.mouse_x, self.mouse_y - i, 0xffffff);
+            self.fb.draw_pixel(self.mouse_x, self.mouse_y + i, 0xffffff);
+        }
+    }
+
+    pub fn events(&mut self, event: Event) {
+        match event {
+            Event::MouseMotion(x, y) => {
+                self.mouse_x = x as u32;
+                self.mouse_y = y as u32;
+            }
+            _ => (),
+        }
     }
 }
