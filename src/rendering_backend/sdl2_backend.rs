@@ -28,8 +28,7 @@ pub struct Sdl2Backend {
 impl Sdl2Backend {
     fn current_time(&self) -> f64 {
         let ms = unsafe { SDL_GetTicks64() };
-        let sec = (ms as f64) / 1000.0;
-        sec
+        (ms as f64) / 1000.0
     }
 
     #[allow(non_upper_case_globals)] // rust-lang/rust #39371
@@ -52,7 +51,7 @@ impl Sdl2Backend {
 }
 
 impl RenderingBackend for Sdl2Backend {
-    fn new<'a>(width: u32, height: u32, title: &'a str) -> Self {
+    fn new(width: u32, height: u32, title: &'_ str) -> Self {
         let cstring = CString::new(title).unwrap();
         let char_ptr = cstring.as_ptr();
 

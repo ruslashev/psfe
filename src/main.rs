@@ -1,3 +1,5 @@
+#![allow(clippy::unreadable_literal)]
+
 mod framebuffer;
 mod rendering_backend;
 mod state;
