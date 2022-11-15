@@ -5,5 +5,5 @@ pub trait RenderingBackend {
     fn get_events(&mut self) -> bool;
 }
 
-mod sdl2;
-pub type ChosenBackend = sdl2::Sdl2Backend;
+mod sdl2_backend;
+pub type ChosenBackend = sdl2_backend::Sdl2Backend;
