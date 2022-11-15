@@ -1,7 +1,9 @@
+use super::RenderingBackend;
 use std::ffi::{c_int, c_void, CStr, CString};
 use std::mem::{size_of, MaybeUninit};
 use std::ptr;
-use super::RenderingBackend;
+
+use crate::state::State;
 
 #[allow(clippy::approx_constant)]
 #[allow(clippy::upper_case_acronyms)]
@@ -21,6 +23,32 @@ pub struct Sdl2Backend {
     window: *mut SDL_Window,
     renderer: *mut SDL_Renderer,
     texture: *mut SDL_Texture,
+}
+
+impl Sdl2Backend {
+    fn current_time(&self) -> f64 {
+        let ms = unsafe { SDL_GetTicks64() };
+        let sec = (ms as f64) / 1000.0;
+        sec
+    }
+
+    #[allow(non_upper_case_globals)] // rust-lang/rust #39371
+    fn get_events(&mut self) -> bool {
+        let mut event = MaybeUninit::uninit();
+
+        unsafe {
+            while SDL_PollEvent(event.as_mut_ptr()) != 0 {
+                let ret_event = event.assume_init();
+
+                match ret_event.type_ {
+                    SDL_EventType_SDL_QUIT => return false,
+                    _ => continue,
+                }
+            }
+        }
+
+        true
+    }
 }
 
 impl RenderingBackend for Sdl2Backend {
@@ -62,41 +90,43 @@ impl RenderingBackend for Sdl2Backend {
         }
     }
 
-    fn draw_framebuffer(&self, pixels: &[u32], width: u32) {
-        let pixels = pixels.as_ptr().cast::<c_void>();
+    fn render_state(&self, state: &State) {
+        let pixels = &state.fb.pixels;
+        let pix_ptr = pixels.as_ptr().cast::<c_void>();
+        let width = state.fb.width;
         let px_bytes = size_of::<u32>() as u32;
         let pitch = (width * px_bytes) as c_int;
 
         unsafe {
-            SDL_UpdateTexture(self.texture, ptr::null(), pixels, pitch);
+            SDL_UpdateTexture(self.texture, ptr::null(), pix_ptr, pitch);
             SDL_RenderClear(self.renderer);
             SDL_RenderCopy(self.renderer, self.texture, ptr::null(), ptr::null());
             SDL_RenderPresent(self.renderer);
         }
     }
 
-    fn current_time(&self) -> f64 {
-        let ms = unsafe { SDL_GetTicks64() };
-        let sec = (ms as f64) / 1000.0;
-        sec
-    }
+    fn main_loop(&mut self, mut state: State) {
+        let updates_per_second = 60;
+        let dt = 1.0 / f64::from(updates_per_second as i16);
 
-    #[allow(non_upper_case_globals)] // rust-lang/rust #39371
-    fn get_events(&mut self) -> bool {
-        let mut event = MaybeUninit::uninit();
+        let mut running = true;
+        let mut curr_time = 0.0;
+        let mut real_time;
 
-        unsafe {
-            while SDL_PollEvent(event.as_mut_ptr()) != 0 {
-                let ret_event = event.assume_init();
+        while running {
+            real_time = self.current_time();
 
-                match ret_event.type_ {
-                    SDL_EventType_SDL_QUIT => return false,
-                    _ => continue,
-                }
+            while curr_time < real_time {
+                curr_time += dt;
+
+                running = self.get_events();
+                State::update(&mut state, dt);
             }
-        }
 
-        true
+            State::render(&mut state);
+
+            self.render_state(&state);
+        }
     }
 }
 

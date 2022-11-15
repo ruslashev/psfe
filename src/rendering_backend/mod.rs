@@ -1,8 +1,9 @@
+use crate::state::State;
+
 pub trait RenderingBackend {
     fn new<'a>(width: u32, height: u32, title: &'a str) -> Self;
-    fn draw_framebuffer(&self, pixels: &[u32], width: u32);
-    fn current_time(&self) -> f64;
-    fn get_events(&mut self) -> bool;
+    fn render_state(&self, state: &State);
+    fn main_loop(&mut self, state: State);
 }
 
 mod sdl2_backend;

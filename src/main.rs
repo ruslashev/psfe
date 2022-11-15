@@ -1,17 +1,15 @@
 mod framebuffer;
 mod rendering_backend;
+mod state;
 
-use framebuffer::Framebuffer;
-
-fn update(_dt: f64) {
-}
-
-fn render(fb: &mut Framebuffer) {
-    fb.draw_pixel(0, 2, 0xff00ff);
-}
+use rendering_backend::{ChosenBackend, RenderingBackend};
+use state::State;
 
 fn main() {
-    let mut fb = Framebuffer::new(800, 600, "psfe");
+    let w = 800;
+    let h = 600;
+    let mut backend = ChosenBackend::new(w, h, "psfe");
+    let state = State::new(w, h);
 
-    fb.main_loop(update, render);
+    backend.main_loop(state);
 }
