@@ -1,0 +1,8 @@
+[package]
+name = "psfe"
+version = "0.0.0"
+authors = ["Ruslan Akbashev <ruslashev@gmail.com>"]
+description = "PC Screen Font editor"
+edition = "2021"
+license = "Unlicense"
+repository = "https://github.com/ruslashev/psfe"
