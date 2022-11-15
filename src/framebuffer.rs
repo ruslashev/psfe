@@ -23,6 +23,10 @@ impl Framebuffer {
     }
 
     pub fn draw_pixel(&mut self, x: u32, y: u32, color: u32) {
+        if x >= self.width || y >= self.height {
+            return;
+        }
+
         let idx = y * self.width + x;
         self.pixels[idx as usize] = (color << 8) | 0xff;
     }

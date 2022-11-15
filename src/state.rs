@@ -37,10 +37,10 @@ impl State {
         self.fb.draw_square(self.square_x - 1, self.square_y - 1, 3, 0xff1010);
 
         for i in 0..5 {
-            self.fb.draw_pixel(self.mouse_x - i, self.mouse_y, 0xffffff);
-            self.fb.draw_pixel(self.mouse_x + i, self.mouse_y, 0xffffff);
-            self.fb.draw_pixel(self.mouse_x, self.mouse_y - i, 0xffffff);
-            self.fb.draw_pixel(self.mouse_x, self.mouse_y + i, 0xffffff);
+            self.fb.draw_pixel(self.mouse_x.saturating_sub(i), self.mouse_y, 0xffffff);
+            self.fb.draw_pixel(self.mouse_x.saturating_add(i), self.mouse_y, 0xffffff);
+            self.fb.draw_pixel(self.mouse_x, self.mouse_y.saturating_sub(i), 0xffffff);
+            self.fb.draw_pixel(self.mouse_x, self.mouse_y.saturating_add(i), 0xffffff);
         }
     }
 
