@@ -1,56 +1,149 @@
 use super::framebuffer::Framebuffer;
 use super::rendering_backend::Event;
 
+const PSF1_MODE512: u8 = 0x01;
+
 pub struct State {
     pub fb: Framebuffer,
+    font: Font,
+}
 
-    mouse_x: u32,
-    mouse_y: u32,
+struct Font {
+    _version: u8,
+    width: u8,
+    height: u8,
+    glyphs: Vec<BitMatrix>,
+}
 
-    square_x: u32,
-    square_y: u32,
+struct BitMatrix {
+    // This is a pretty wasteful structure, but it simplifies things
+    width: u8,
+    height: u8,
+    data: Vec<bool>,
 }
 
 impl State {
-    pub fn new(fb_width: u32, fb_height: u32) -> Self {
+    pub fn new(fb_width: u32, fb_height: u32, file: &[u8]) -> Self {
         Self {
             fb: Framebuffer::new(fb_width, fb_height),
-
-            mouse_x: 10,
-            mouse_y: 10,
-
-            square_x: 10,
-            square_y: 10,
+            font: Font::from_file(file).expect("failed to parse font"),
         }
     }
 
-    pub fn update(&mut self, t: f64, _dt: f64) {
-        self.square_x = (t.cos() * 50.0 + 100.0).round() as u32;
-        self.square_y = (t.sin() * 50.0 + 100.0).round() as u32;
-    }
+    pub fn update(&mut self, _t: f64, _dt: f64) {}
 
     pub fn render(&mut self) {
         self.fb.clear();
 
-        self.fb.draw_pixel(0, 2, 0xff00ff);
+        let mut grid_y: u32 = 0;
+        let mut grid_x: u32 = 0;
 
-        self.fb.draw_square(self.square_x - 1, self.square_y - 1, 3, 0xff1010);
+        for glyph in &self.font.glyphs {
+            let offset_x = grid_x * self.font.width as u32 * 2;
+            let offset_y = grid_y * self.font.height as u32 * 2;
 
-        for i in 0..5 {
-            self.fb.draw_pixel(self.mouse_x.saturating_sub(i), self.mouse_y, 0xffffff);
-            self.fb.draw_pixel(self.mouse_x.saturating_add(i), self.mouse_y, 0xffffff);
-            self.fb.draw_pixel(self.mouse_x, self.mouse_y.saturating_sub(i), 0xffffff);
-            self.fb.draw_pixel(self.mouse_x, self.mouse_y.saturating_add(i), 0xffffff);
+            for y in 0..(self.font.height as u32) {
+                for x in 0..(self.font.width as u32) {
+                    let mut color = 0;
+
+                    if glyph.get(x as usize, y as usize) {
+                        color = 0xffffff;
+                    }
+
+                    self.fb.draw_pixel(offset_x + x, offset_y + y, color);
+                }
+            }
+
+            grid_x += 1;
+            if grid_x >= 15 {
+                grid_x = 0;
+                grid_y += 1;
+            }
         }
     }
 
-    pub fn events(&mut self, event: Event) {
-        match event {
-            Event::MouseMotion(x, y) => {
-                self.mouse_x = x as u32;
-                self.mouse_y = y as u32;
-            }
-            _ => (),
+    pub fn events(&mut self, _event: Event) {}
+}
+
+impl Font {
+    fn from_file(file: &[u8]) -> Option<Self> {
+        if file[0..2] == [0x36, 0x04] {
+            return Self::parse_psf1(file);
         }
+
+        None
+    }
+
+    fn parse_psf1(file: &[u8]) -> Option<Self> {
+        let height = file[3];
+
+        Some(Self {
+            _version: 1,
+            width: 8,
+            height,
+            glyphs: Self::parse_psf1_glyphs(height, file),
+        })
+    }
+
+    fn parse_psf1_glyphs(height: u8, file: &[u8]) -> Vec<BitMatrix> {
+        let mode = file[2];
+        let num_glyphs = if mode & PSF1_MODE512 != 0 { 512 } else { 256 };
+        let mut glyphs = vec![];
+        let glyph_data = &file[4..];
+
+        for i in 0..num_glyphs {
+            let mut glyph = BitMatrix::new(8, height);
+            let offset = i * height as usize;
+
+            for h in 0..height {
+                let row = glyph_data[offset + h as usize];
+
+                for bit in 0..8 {
+                    let mask = 1 << bit;
+
+                    if row & mask != 0 {
+                        glyph.set(8 - bit - 1, h.into());
+                    }
+                }
+            }
+
+            glyphs.push(glyph);
+        }
+
+        glyphs
+    }
+}
+
+impl BitMatrix {
+    fn new(width: u8, height: u8) -> Self {
+        let mut data = Vec::new();
+        let w: usize = width.into();
+        let h: usize = height.into();
+
+        data.resize(w * h, false);
+
+        Self {
+            width,
+            height,
+            data,
+        }
+    }
+
+    fn set(&mut self, x: usize, y: usize) {
+        assert!(x < self.width.into());
+        assert!(y < self.height.into());
+
+        let w: usize = self.width.into();
+
+        self.data[y * w + x] = true;
+    }
+
+    fn get(&self, x: usize, y: usize) -> bool {
+        assert!(x < self.width.into());
+        assert!(y < self.height.into());
+
+        let w: usize = self.width.into();
+
+        self.data[y * w + x]
     }
 }

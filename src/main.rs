@@ -8,10 +8,13 @@ use rendering_backend::{ChosenBackend, RenderingBackend};
 use state::State;
 
 fn main() {
+    let filename = "font.psf";
+    let file = std::fs::read(filename).expect("failed to read file");
+
     let w = 800;
     let h = 600;
     let mut backend = ChosenBackend::new(w, h, "psfe");
-    let state = State::new(w, h);
+    let state = State::new(w, h, &file);
 
     backend.main_loop(state);
 }
