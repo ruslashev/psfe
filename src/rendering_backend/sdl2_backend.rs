@@ -119,7 +119,7 @@ impl RenderingBackend for Sdl2Backend {
                 curr_time += dt;
 
                 running = self.get_events();
-                State::update(&mut state, dt);
+                State::update(&mut state, curr_time, dt);
             }
 
             State::render(&mut state);
