@@ -43,12 +43,15 @@ impl Framebuffer {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn draw_square(&mut self, x: u32, y: u32, size: u32, color: u32) {
-        for dy in 0..size {
-            for dx in 0..size {
+    pub fn draw_rect(&mut self, x: u32, y: u32, w: u32, h: u32, color: u32) {
+        for dy in 0..h {
+            for dx in 0..w {
                 self.draw_pixel(x + dx, y + dy, color);
             }
         }
+    }
+
+    pub fn draw_square(&mut self, x: u32, y: u32, size: u32, color: u32) {
+        self.draw_rect(x, y, size, size, color);
     }
 }

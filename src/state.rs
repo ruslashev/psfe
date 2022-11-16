@@ -4,6 +4,8 @@ use super::rendering_backend::Event;
 const GRID_OFFS_X: u32 = 3;
 const GRID_OFFS_Y: u32 = 3;
 
+const EDITOR_CELL_SIZE: u32 = 16;
+
 const PSF1_MODE512: u8 = 0x01;
 
 pub struct State {
@@ -13,6 +15,9 @@ pub struct State {
     hov_y: u32,
     sel_x: u32,
     sel_y: u32,
+
+    editor_offs_x: u32,
+    editor_offs_y: u32,
 }
 
 struct Font {
@@ -31,13 +36,19 @@ struct BitMatrix {
 
 impl State {
     pub fn new(fb_width: u32, fb_height: u32, file: &[u8]) -> Self {
+        let font = Font::from_file(file).expect("failed to parse font");
+        let fw = font.width as u32;
+        let fh = font.height as u32;
+
         Self {
             fb: Framebuffer::new(fb_width, fb_height),
-            font: Font::from_file(file).expect("failed to parse font"),
+            font,
             hov_x: 0,
             hov_y: 0,
             sel_x: 0,
             sel_y: 0,
+            editor_offs_x: fb_width / 2 - (fw + 1) * EDITOR_CELL_SIZE / 2,
+            editor_offs_y: fb_height / 2 - (fh + 1) * EDITOR_CELL_SIZE / 2,
         }
     }
 
@@ -47,6 +58,7 @@ impl State {
         self.fb.clear();
 
         self.render_glyphs_grid();
+        self.render_glyph_editor();
     }
 
     fn render_glyphs_grid(&mut self) {
@@ -89,6 +101,25 @@ impl State {
                         self.fb.draw_pixel(offset_x + x + 1, offset_y + y + 1, color);
                     }
                 }
+            }
+        }
+    }
+
+    fn render_glyph_editor(&mut self) {
+        let sel_idx = self.sel_y * 16 + self.sel_x;
+        let sel_glyph = &self.font.glyphs[sel_idx as usize];
+        let fh = self.font.height as usize;
+        let fw = self.font.width as usize;
+
+        for cell_y in 0..fh {
+            for cell_x in 0..fw {
+                let filled = sel_glyph.get(cell_x, cell_y);
+                let color = if filled { 0xffffff } else { 0x222222 };
+
+                let x = self.editor_offs_x + (cell_x + 1) as u32 * EDITOR_CELL_SIZE;
+                let y = self.editor_offs_y + (cell_y + 1) as u32 * EDITOR_CELL_SIZE;
+
+                self.fb.draw_square(x, y, EDITOR_CELL_SIZE, color);
             }
         }
     }
