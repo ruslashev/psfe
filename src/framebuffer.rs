@@ -32,14 +32,14 @@ impl Framebuffer {
     }
 
     pub fn draw_rect_hollow(&mut self, x: u32, y: u32, w: u32, h: u32, color: u32) {
-        for horz in 0..=w {
+        for horz in 0..w {
             self.draw_pixel(x + horz, y, color);
-            self.draw_pixel(x + horz, y + h, color);
+            self.draw_pixel(x + horz, y + h - 1, color);
         }
 
-        for vert in 0..=h {
+        for vert in 0..h {
             self.draw_pixel(x, y + vert, color);
-            self.draw_pixel(x + w, y + vert, color);
+            self.draw_pixel(x + w - 1, y + vert, color);
         }
     }
 
