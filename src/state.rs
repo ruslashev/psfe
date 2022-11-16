@@ -46,6 +46,10 @@ impl State {
     pub fn render(&mut self) {
         self.fb.clear();
 
+        self.render_glyphs_grid();
+    }
+
+    fn render_glyphs_grid(&mut self) {
         for (grid_y, row) in self.font.glyphs.chunks(16).enumerate() {
             for (grid_x, glyph) in row.iter().enumerate() {
                 let fw = self.font.width as u32;
