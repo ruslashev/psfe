@@ -147,6 +147,11 @@ impl State {
                 self.detect_mouse_hover(x, y);
                 if self.inside_glyphs_area {
                     self.glyph_sel = self.glyph_hov;
+                } else if self.inside_editor_area {
+                    let sel_idx = self.glyph_sel.1 * 16 + self.glyph_sel.0;
+                    let sel_glyph = &mut self.font.glyphs[sel_idx as usize];
+                    let (hov_x, hov_y) = self.editor_hov;
+                    sel_glyph.toggle(hov_x as usize, hov_y as usize);
                 }
             }
             _ => (),
@@ -276,5 +281,14 @@ impl BitMatrix {
         let w: usize = self.width.into();
 
         self.data[y * w + x]
+    }
+
+    fn toggle(&mut self, x: usize, y: usize) {
+        assert!(x < self.width.into());
+        assert!(y < self.height.into());
+
+        let w: usize = self.width.into();
+
+        self.data[y * w + x] = !self.data[y * w + x];
     }
 }
