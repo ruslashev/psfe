@@ -11,6 +11,8 @@ pub struct State {
     font: Font,
     hov_x: u32,
     hov_y: u32,
+    sel_x: u32,
+    sel_y: u32,
 }
 
 struct Font {
@@ -34,6 +36,8 @@ impl State {
             font: Font::from_file(file).expect("failed to parse font"),
             hov_x: 0,
             hov_y: 0,
+            sel_x: 0,
+            sel_y: 0,
         }
     }
 
@@ -52,8 +56,15 @@ impl State {
                 let offset_y = GRID_OFFS_Y + gy * fh * 2;
 
                 let hovered = gx == self.hov_x && gy == self.hov_y;
+                let selected = gx == self.sel_x && gy == self.sel_y;
 
-                let border_color = if hovered { 0x990000 } else { 0x770000 };
+                let border_color = if selected {
+                    0x00aa00
+                } else if hovered {
+                    0x990000
+                } else {
+                    0x770000
+                };
 
                 self.fb.draw_rect_hollow(offset_x, offset_y, fw + 2, fh + 2, border_color);
 
@@ -62,8 +73,10 @@ impl State {
                         let color = {
                             if glyph.get(x as usize, y as usize) {
                                 0xffffff
+                            } else if selected {
+                                0x848484
                             } else if hovered {
-                                0x606060
+                                0x585858
                             } else {
                                 0x000000
                             }
@@ -80,6 +93,11 @@ impl State {
         match event {
             Event::MouseMotion(x, y) => {
                 self.detect_mouse_hover(x, y);
+            }
+            Event::MousePress(x, y) => {
+                self.detect_mouse_hover(x, y);
+                self.sel_x = self.hov_x;
+                self.sel_y = self.hov_y;
             }
             _ => (),
         }
