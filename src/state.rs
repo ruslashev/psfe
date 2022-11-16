@@ -9,6 +9,8 @@ const PSF1_MODE512: u8 = 0x01;
 pub struct State {
     pub fb: Framebuffer,
     font: Font,
+    hov_x: u32,
+    hov_y: u32,
 }
 
 struct Font {
@@ -30,6 +32,8 @@ impl State {
         Self {
             fb: Framebuffer::new(fb_width, fb_height),
             font: Font::from_file(file).expect("failed to parse font"),
+            hov_x: 0,
+            hov_y: 0,
         }
     }
 
@@ -42,18 +46,28 @@ impl State {
             for (grid_x, glyph) in row.iter().enumerate() {
                 let fw = self.font.width as u32;
                 let fh = self.font.height as u32;
-                let offset_x = GRID_OFFS_X + (grid_x as u32) * fw * 2;
-                let offset_y = GRID_OFFS_Y + (grid_y as u32) * fh * 2;
+                let gx = grid_x as u32;
+                let gy = grid_y as u32;
+                let offset_x = GRID_OFFS_X + gx * fw * 2;
+                let offset_y = GRID_OFFS_Y + gy * fh * 2;
 
-                self.fb.draw_rect_hollow(offset_x, offset_y, fw + 2, fh + 2, 0xaa0000);
+                let hovered = gx == self.hov_x && gy == self.hov_y;
+
+                let border_color = if hovered { 0x990000 } else { 0x770000 };
+
+                self.fb.draw_rect_hollow(offset_x, offset_y, fw + 2, fh + 2, border_color);
 
                 for y in 0..fh {
                     for x in 0..fw {
-                        let mut color = 0;
-
-                        if glyph.get(x as usize, y as usize) {
-                            color = 0xffffff;
-                        }
+                        let color = {
+                            if glyph.get(x as usize, y as usize) {
+                                0xffffff
+                            } else if hovered {
+                                0x606060
+                            } else {
+                                0x000000
+                            }
+                        };
 
                         self.fb.draw_pixel(offset_x + x + 1, offset_y + y + 1, color);
                     }
@@ -62,7 +76,30 @@ impl State {
         }
     }
 
-    pub fn events(&mut self, _event: Event) {}
+    pub fn events(&mut self, event: Event) {
+        match event {
+            Event::MouseMotion(x, y) => {
+                self.detect_mouse_hover(x, y);
+            }
+            _ => (),
+        }
+    }
+
+    fn detect_mouse_hover(&mut self, mut x: i32, mut y: i32) {
+        x -= GRID_OFFS_X as i32;
+        y -= GRID_OFFS_Y as i32;
+
+        x /= 2;
+        y /= 2;
+
+        x /= self.font.width as i32;
+        y /= self.font.height as i32;
+
+        if x <= 16 && y <= 16 {
+            self.hov_x = x as u32;
+            self.hov_y = y as u32;
+        }
+    }
 }
 
 impl Font {
