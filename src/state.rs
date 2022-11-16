@@ -11,6 +11,7 @@ const PSF1_MODE512: u8 = 0x01;
 pub struct State {
     pub fb: Framebuffer,
     font: Font,
+
     hov_x: u32,
     hov_y: u32,
     sel_x: u32,
@@ -132,11 +133,20 @@ impl State {
             }
             Event::MousePress(x, y) => {
                 self.detect_mouse_hover(x, y);
-                self.sel_x = self.hov_x;
-                self.sel_y = self.hov_y;
+                if self.mouse_in_glyphs_grid_area(x, y) {
+                    self.sel_x = self.hov_x;
+                    self.sel_y = self.hov_y;
+                }
             }
             _ => (),
         }
+    }
+
+    fn mouse_in_glyphs_grid_area(&self, x: i32, y: i32) -> bool {
+        let inx = (x - GRID_OFFS_X as i32) / 2 / self.font.width as i32 <= 16;
+        let iny = (y - GRID_OFFS_Y as i32) / 2 / self.font.height as i32 <= 16;
+
+        inx && iny
     }
 
     fn detect_mouse_hover(&mut self, mut x: i32, mut y: i32) {
