@@ -1,6 +1,9 @@
 use super::framebuffer::Framebuffer;
 use super::rendering_backend::Event;
 
+const GRID_OFFS_X: u32 = 3;
+const GRID_OFFS_Y: u32 = 3;
+
 const PSF1_MODE512: u8 = 0x01;
 
 pub struct State {
@@ -35,19 +38,16 @@ impl State {
     pub fn render(&mut self) {
         self.fb.clear();
 
-        let grid_offs_x = 3;
-        let grid_offs_y = 3;
-
         let mut grid_y: u32 = 0;
         let mut grid_x: u32 = 0;
 
         for glyph in &self.font.glyphs {
             let fw = self.font.width.into();
             let fh = self.font.height.into();
-            let offset_x = grid_offs_x + grid_x * fw * 2;
-            let offset_y = grid_offs_y + grid_y * fh * 2;
+            let offset_x = GRID_OFFS_X + grid_x * fw * 2;
+            let offset_y = GRID_OFFS_Y + grid_y * fh * 2;
 
-            self.fb.draw_rect_hollow(offset_x - 1, offset_y - 1, fw + 2, fh + 2, 0xaa0000);
+            self.fb.draw_rect_hollow(offset_x, offset_y, fw + 2, fh + 2, 0xaa0000);
 
             for y in 0..fh {
                 for x in 0..fw {
@@ -57,7 +57,7 @@ impl State {
                         color = 0xffffff;
                     }
 
-                    self.fb.draw_pixel(offset_x + x, offset_y + y, color);
+                    self.fb.draw_pixel(offset_x + x + 1, offset_y + y + 1, color);
                 }
             }
 
