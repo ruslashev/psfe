@@ -41,6 +41,7 @@ impl Sdl2Backend {
 
                 match ret_event.type_ {
                     SDL_EventType_SDL_QUIT => return false,
+                    SDL_EventType_SDL_KEYDOWN => return false, // CBA
                     SDL_EventType_SDL_MOUSEMOTION => {
                         let x = ret_event.motion.x;
                         let y = ret_event.motion.y;
