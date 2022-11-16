@@ -12,10 +12,8 @@ pub struct State {
     pub fb: Framebuffer,
     font: Font,
 
-    hov_x: u32,
-    hov_y: u32,
-    sel_x: u32,
-    sel_y: u32,
+    glyph_hov: (u32, u32),
+    glyph_sel: (u32, u32),
 
     editor_offs_x: u32,
     editor_offs_y: u32,
@@ -44,10 +42,8 @@ impl State {
         Self {
             fb: Framebuffer::new(fb_width, fb_height),
             font,
-            hov_x: 0,
-            hov_y: 0,
-            sel_x: 0,
-            sel_y: 0,
+            glyph_hov: (0, 0),
+            glyph_sel: (0, 0),
             editor_offs_x: fb_width / 2 - fw * EDITOR_CELL_SIZE / 2,
             editor_offs_y: fb_height / 2 - fh * EDITOR_CELL_SIZE / 2,
         }
@@ -72,8 +68,10 @@ impl State {
                 let offset_x = GRID_OFFS_X + gx * fw * 2;
                 let offset_y = GRID_OFFS_Y + gy * fh * 2;
 
-                let hovered = gx == self.hov_x && gy == self.hov_y;
-                let selected = gx == self.sel_x && gy == self.sel_y;
+                let (hov_x, hov_y) = self.glyph_hov;
+                let (sel_x, sel_y) = self.glyph_sel;
+                let hovered = gx == hov_x && gy == hov_y;
+                let selected = gx == sel_x && gy == sel_y;
 
                 let border_color = if selected {
                     0x00aa00
@@ -107,7 +105,7 @@ impl State {
     }
 
     fn render_glyph_editor(&mut self) {
-        let sel_idx = self.sel_y * 16 + self.sel_x;
+        let sel_idx = self.glyph_sel.1 * 16 + self.glyph_sel.0;
         let sel_glyph = &self.font.glyphs[sel_idx as usize];
         let fh = self.font.height as u32;
         let fw = self.font.width as u32;
@@ -134,8 +132,7 @@ impl State {
             Event::MousePress(x, y) => {
                 self.detect_mouse_hover(x, y);
                 if self.mouse_in_glyphs_grid_area(x, y) {
-                    self.sel_x = self.hov_x;
-                    self.sel_y = self.hov_y;
+                    self.glyph_sel = self.glyph_hov;
                 }
             }
             _ => (),
@@ -143,8 +140,10 @@ impl State {
     }
 
     fn mouse_in_glyphs_grid_area(&self, x: i32, y: i32) -> bool {
-        let inx = (x - GRID_OFFS_X as i32) / 2 / self.font.width as i32 <= 16;
-        let iny = (y - GRID_OFFS_Y as i32) / 2 / self.font.height as i32 <= 16;
+        let fw = self.font.width as i32;
+        let fh = self.font.height as i32;
+        let inx = (x - GRID_OFFS_X as i32) / 2 / fw < 16;
+        let iny = (y - GRID_OFFS_Y as i32) / 2 / fh < 16;
 
         inx && iny
     }
@@ -159,9 +158,8 @@ impl State {
         x /= self.font.width as i32;
         y /= self.font.height as i32;
 
-        if x <= 16 && y <= 16 {
-            self.hov_x = x as u32;
-            self.hov_y = y as u32;
+        if x < 16 && y < 16 {
+            self.glyph_hov = (x as u32, y as u32);
         }
     }
 }
