@@ -14,6 +14,10 @@ pub struct State {
 
     glyph_hov: (u32, u32),
     glyph_sel: (u32, u32),
+    inside_glyphs_area: bool,
+
+    editor_hov: (i32, i32),
+    inside_editor_area: bool,
 
     editor_offs_x: u32,
     editor_offs_y: u32,
@@ -44,6 +48,9 @@ impl State {
             font,
             glyph_hov: (0, 0),
             glyph_sel: (0, 0),
+            inside_glyphs_area: false,
+            editor_hov: (0, 0),
+            inside_editor_area: false,
             editor_offs_x: fb_width / 2 - fw * EDITOR_CELL_SIZE / 2,
             editor_offs_y: fb_height / 2 - fh * EDITOR_CELL_SIZE / 2,
         }
@@ -122,6 +129,13 @@ impl State {
                 self.fb.draw_square_hollow(x, y, EDITOR_CELL_SIZE + 1, 0x222222);
             }
         }
+
+        if self.inside_editor_area {
+            let (hov_x, hov_y) = self.editor_hov;
+            let x = self.editor_offs_x as i32 + hov_x * EDITOR_CELL_SIZE as i32;
+            let y = self.editor_offs_y as i32 + hov_y * EDITOR_CELL_SIZE as i32;
+            self.fb.draw_square_hollow(x as u32, y as u32, EDITOR_CELL_SIZE + 1, 0x00aa00);
+        }
     }
 
     pub fn events(&mut self, event: Event) {
@@ -131,7 +145,7 @@ impl State {
             }
             Event::MousePress(x, y) => {
                 self.detect_mouse_hover(x, y);
-                if self.mouse_in_glyphs_grid_area(x, y) {
+                if self.inside_glyphs_area {
                     self.glyph_sel = self.glyph_hov;
                 }
             }
@@ -139,28 +153,46 @@ impl State {
         }
     }
 
-    fn mouse_in_glyphs_grid_area(&self, x: i32, y: i32) -> bool {
+    fn detect_mouse_hover(&mut self, x: i32, y: i32) {
         let fw = self.font.width as i32;
         let fh = self.font.height as i32;
-        let inx = (x - GRID_OFFS_X as i32) / 2 / fw < 16;
-        let iny = (y - GRID_OFFS_Y as i32) / 2 / fh < 16;
 
-        inx && iny
-    }
+        let mut gx = x;
+        let mut gy = y;
 
-    fn detect_mouse_hover(&mut self, mut x: i32, mut y: i32) {
-        x -= GRID_OFFS_X as i32;
-        y -= GRID_OFFS_Y as i32;
+        gx -= GRID_OFFS_X as i32;
+        gy -= GRID_OFFS_Y as i32;
 
-        x /= 2;
-        y /= 2;
+        gx /= 2;
+        gy /= 2;
 
-        x /= self.font.width as i32;
-        y /= self.font.height as i32;
+        gx /= fw;
+        gy /= fh;
 
-        if x < 16 && y < 16 {
-            self.glyph_hov = (x as u32, y as u32);
+        if gx < 16 && gy < 16 {
+            self.glyph_hov = (gx as u32, gy as u32);
+            self.inside_glyphs_area = true;
+            return;
         }
+
+        self.inside_glyphs_area = false;
+
+        let mut cx = x;
+        let mut cy = y;
+
+        cx -= self.editor_offs_x as i32;
+        cy -= self.editor_offs_y as i32;
+
+        cx /= EDITOR_CELL_SIZE as i32;
+        cy /= EDITOR_CELL_SIZE as i32;
+
+        if cx >= 0 && cx < fw && cy >= 0 && cy < fh {
+            self.editor_hov = (cx, cy);
+            self.inside_editor_area = true;
+            return;
+        }
+
+        self.inside_editor_area = false;
     }
 }
 
