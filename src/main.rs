@@ -11,8 +11,8 @@ fn main() {
     let filename = "font.psf";
     let file = std::fs::read(filename).expect("failed to read file");
 
-    let w = 800;
-    let h = 600;
+    let w = 1024;
+    let h = 768;
     let mut backend = ChosenBackend::new(w, h, "psfe");
     let state = State::new(w, h, &file);
 
