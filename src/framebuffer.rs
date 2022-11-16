@@ -54,4 +54,8 @@ impl Framebuffer {
     pub fn draw_square(&mut self, x: u32, y: u32, size: u32, color: u32) {
         self.draw_rect(x, y, size, size, color);
     }
+
+    pub fn draw_square_hollow(&mut self, x: u32, y: u32, size: u32, color: u32) {
+        self.draw_rect_hollow(x, y, size, size, color);
+    }
 }

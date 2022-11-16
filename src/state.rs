@@ -47,8 +47,8 @@ impl State {
             hov_y: 0,
             sel_x: 0,
             sel_y: 0,
-            editor_offs_x: fb_width / 2 - (fw + 1) * EDITOR_CELL_SIZE / 2,
-            editor_offs_y: fb_height / 2 - (fh + 1) * EDITOR_CELL_SIZE / 2,
+            editor_offs_x: fb_width / 2 - fw * EDITOR_CELL_SIZE / 2,
+            editor_offs_y: fb_height / 2 - fh * EDITOR_CELL_SIZE / 2,
         }
     }
 
@@ -108,18 +108,19 @@ impl State {
     fn render_glyph_editor(&mut self) {
         let sel_idx = self.sel_y * 16 + self.sel_x;
         let sel_glyph = &self.font.glyphs[sel_idx as usize];
-        let fh = self.font.height as usize;
-        let fw = self.font.width as usize;
+        let fh = self.font.height as u32;
+        let fw = self.font.width as u32;
 
         for cell_y in 0..fh {
             for cell_x in 0..fw {
-                let filled = sel_glyph.get(cell_x, cell_y);
-                let color = if filled { 0xffffff } else { 0x222222 };
+                let filled = sel_glyph.get(cell_x as usize, cell_y as usize);
+                let color = if filled { 0xffffff } else { 0x111111 };
 
-                let x = self.editor_offs_x + (cell_x + 1) as u32 * EDITOR_CELL_SIZE;
-                let y = self.editor_offs_y + (cell_y + 1) as u32 * EDITOR_CELL_SIZE;
+                let x = self.editor_offs_x + cell_x * EDITOR_CELL_SIZE;
+                let y = self.editor_offs_y + cell_y * EDITOR_CELL_SIZE;
 
                 self.fb.draw_square(x, y, EDITOR_CELL_SIZE, color);
+                self.fb.draw_square_hollow(x, y, EDITOR_CELL_SIZE + 1, 0x222222);
             }
         }
     }
