@@ -31,6 +31,19 @@ impl Framebuffer {
         self.pixels[idx as usize] = (color << 8) | 0xff;
     }
 
+    pub fn draw_rect_hollow(&mut self, x: u32, y: u32, w: u32, h: u32, color: u32) {
+        for horz in 0..=w {
+            self.draw_pixel(x + horz, y, color);
+            self.draw_pixel(x + horz, y + h, color);
+        }
+
+        for vert in 0..=h {
+            self.draw_pixel(x, y + vert, color);
+            self.draw_pixel(x + w, y + vert, color);
+        }
+    }
+
+    #[allow(dead_code)]
     pub fn draw_square(&mut self, x: u32, y: u32, size: u32, color: u32) {
         for dy in 0..size {
             for dx in 0..size {

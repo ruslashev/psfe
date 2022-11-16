@@ -35,15 +35,22 @@ impl State {
     pub fn render(&mut self) {
         self.fb.clear();
 
+        let grid_offs_x = 3;
+        let grid_offs_y = 3;
+
         let mut grid_y: u32 = 0;
         let mut grid_x: u32 = 0;
 
         for glyph in &self.font.glyphs {
-            let offset_x = grid_x * self.font.width as u32 * 2;
-            let offset_y = grid_y * self.font.height as u32 * 2;
+            let fw = self.font.width.into();
+            let fh = self.font.height.into();
+            let offset_x = grid_offs_x + grid_x * fw * 2;
+            let offset_y = grid_offs_y + grid_y * fh * 2;
 
-            for y in 0..(self.font.height as u32) {
-                for x in 0..(self.font.width as u32) {
+            self.fb.draw_rect_hollow(offset_x - 1, offset_y - 1, fw + 2, fh + 2, 0xaa0000);
+
+            for y in 0..fh {
+                for x in 0..fw {
                     let mut color = 0;
 
                     if glyph.get(x as usize, y as usize) {
@@ -55,7 +62,7 @@ impl State {
             }
 
             grid_x += 1;
-            if grid_x >= 15 {
+            if grid_x >= 16 {
                 grid_x = 0;
                 grid_y += 1;
             }
