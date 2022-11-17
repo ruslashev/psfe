@@ -6,6 +6,8 @@ const GRID_OFFS_Y: u32 = 3;
 
 const EDITOR_CELL_SIZE: u32 = 16;
 
+const PSF1_MAGIC0: u8 = 0x36;
+const PSF1_MAGIC1: u8 = 0x04;
 const PSF1_MODE512: u8 = 0x01;
 
 pub struct State {
@@ -25,6 +27,8 @@ pub struct State {
 
     drawing: bool,
     drawing_sets_bits_to: bool,
+
+    saves_counter: u32,
 }
 
 pub enum Message {
@@ -65,6 +69,7 @@ impl State {
             editor_offs_y: fb_height / 2 - fh * EDITOR_CELL_SIZE / 2,
             drawing: false,
             drawing_sets_bits_to: true,
+            saves_counter: 0,
         }
     }
 
@@ -153,6 +158,7 @@ impl State {
         match event {
             Event::KeyPress(key) => match key {
                 KeyButton::Escape => self.message_queue.push(Message::Quit),
+                KeyButton::Character('w') => self.save_file(),
                 _ => (),
             },
             Event::MouseMotion(x, y) => {
@@ -252,11 +258,40 @@ impl State {
         let sel_idx = sel_y * 16 + sel_x;
         sel_idx as usize
     }
+
+    fn save_file(&mut self) {
+        let filename = format!("saved_font{:03}.psf", self.saves_counter);
+        self.saves_counter += 1;
+
+        let file = self.construct_font_file();
+
+        match std::fs::write(&filename, file) {
+            Ok(_) => println!("saved to file \"{filename}\""),
+            Err(_) => println!("failed to write to file \"{filename}\""),
+        }
+    }
+
+    fn construct_font_file(&self) -> Vec<u8> {
+        let mut file = vec![
+            PSF1_MAGIC0,
+            PSF1_MAGIC1,
+            0,                // mode
+            self.font.height, // charsize
+        ];
+
+        for glyph in &self.font.glyphs {
+            for row in glyph.serialize() {
+                file.push(row);
+            }
+        }
+
+        file
+    }
 }
 
 impl Font {
     fn from_file(file: &[u8]) -> Option<Self> {
-        if file[0..2] == [0x36, 0x04] {
+        if file[0..2] == [PSF1_MAGIC0, PSF1_MAGIC1] {
             return Self::parse_psf1(file);
         }
 
@@ -342,5 +377,22 @@ impl BitMatrix {
 
     fn clear_all(&mut self) {
         self.data.fill(false);
+    }
+
+    fn serialize(&self) -> Vec<u8> {
+        let mut rows = vec![];
+
+        for y in 0..self.height {
+            let mut row = 0;
+
+            for x in 0..self.width {
+                let bit = self.get((8 - x - 1) as usize, y as usize) as u8;
+                row |= bit << x;
+            }
+
+            rows.push(row);
+        }
+
+        rows
     }
 }
