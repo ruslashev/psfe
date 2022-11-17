@@ -21,6 +21,9 @@ pub struct State {
 
     editor_offs_x: u32,
     editor_offs_y: u32,
+
+    drawing: bool,
+    drawing_sets_bits_to: bool,
 }
 
 struct Font {
@@ -53,6 +56,8 @@ impl State {
             inside_editor_area: false,
             editor_offs_x: fb_width / 2 - fw * EDITOR_CELL_SIZE / 2,
             editor_offs_y: fb_height / 2 - fh * EDITOR_CELL_SIZE / 2,
+            drawing: false,
+            drawing_sets_bits_to: true,
         }
     }
 
@@ -142,17 +147,40 @@ impl State {
         match event {
             Event::MouseMotion(x, y) => {
                 self.detect_mouse_hover(x, y);
+
+                if self.drawing {
+                    let (hov_x, hov_y) = self.editor_hov;
+                    let sel_idx = self.glyph_sel.1 * 16 + self.glyph_sel.0;
+                    let sel_glyph = &mut self.font.glyphs[sel_idx as usize];
+
+                    sel_glyph.set_to(hov_x as usize, hov_y as usize, self.drawing_sets_bits_to);
+                }
             }
             Event::MousePress(x, y) => {
                 self.detect_mouse_hover(x, y);
+
                 if self.inside_glyphs_area {
                     self.glyph_sel = self.glyph_hov;
-                } else if self.inside_editor_area {
+                    return;
+                }
+
+                if self.inside_editor_area {
+                    let (hov_x, hov_y) = self.editor_hov;
+                    let (hov_x, hov_y) = (hov_x as usize, hov_y as usize);
+
                     let sel_idx = self.glyph_sel.1 * 16 + self.glyph_sel.0;
                     let sel_glyph = &mut self.font.glyphs[sel_idx as usize];
-                    let (hov_x, hov_y) = self.editor_hov;
-                    sel_glyph.toggle(hov_x as usize, hov_y as usize);
+
+                    if !self.drawing {
+                        self.drawing = true;
+                        self.drawing_sets_bits_to = !sel_glyph.get(hov_x, hov_y);
+                    }
+
+                    sel_glyph.set_to(hov_x, hov_y, self.drawing_sets_bits_to);
                 }
+            }
+            Event::MouseRelease(_, _) => {
+                self.drawing = false;
             }
             _ => (),
         }
@@ -265,13 +293,17 @@ impl BitMatrix {
         }
     }
 
-    fn set(&mut self, x: usize, y: usize) {
+    fn set_to(&mut self, x: usize, y: usize, val: bool) {
         assert!(x < self.width.into());
         assert!(y < self.height.into());
 
         let w: usize = self.width.into();
 
-        self.data[y * w + x] = true;
+        self.data[y * w + x] = val;
+    }
+
+    fn set(&mut self, x: usize, y: usize) {
+        self.set_to(x, y, true);
     }
 
     fn get(&self, x: usize, y: usize) -> bool {
@@ -281,14 +313,5 @@ impl BitMatrix {
         let w: usize = self.width.into();
 
         self.data[y * w + x]
-    }
-
-    fn toggle(&mut self, x: usize, y: usize) {
-        assert!(x < self.width.into());
-        assert!(y < self.height.into());
-
-        let w: usize = self.width.into();
-
-        self.data[y * w + x] = !self.data[y * w + x];
     }
 }
