@@ -1,4 +1,4 @@
-use super::{Event, RenderingBackend};
+use super::{Event, MouseButton, RenderingBackend};
 use std::ffi::{c_int, c_void, CStr, CString};
 use std::mem::{size_of, MaybeUninit};
 use std::ptr;
@@ -51,8 +51,11 @@ impl Sdl2Backend {
                     SDL_EventType_SDL_MOUSEBUTTONDOWN => {
                         let x = ret_event.button.x;
                         let y = ret_event.button.y;
-                        let event = Event::MousePress(x, y);
-                        State::events(state, event)
+                        let maybe_button = Self::mouse_button_to_enum(ret_event.button.button);
+                        if let Some(button) = maybe_button {
+                            let event = Event::MousePress(button, x, y);
+                            State::events(state, event)
+                        }
                     }
                     SDL_EventType_SDL_MOUSEBUTTONUP => {
                         let x = ret_event.button.x;
@@ -71,6 +74,17 @@ impl Sdl2Backend {
         }
 
         true
+    }
+
+    fn mouse_button_to_enum(button_int: u8) -> Option<MouseButton> {
+        match button_int.into() {
+            SDL_BUTTON_LEFT => Some(MouseButton::Left),
+            SDL_BUTTON_MIDDLE => Some(MouseButton::Middle),
+            SDL_BUTTON_RIGHT => Some(MouseButton::Right),
+            SDL_BUTTON_X1 => Some(MouseButton::X1),
+            SDL_BUTTON_X2 => Some(MouseButton::X2),
+            _ => None,
+        }
     }
 }
 

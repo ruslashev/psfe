@@ -1,5 +1,5 @@
 use super::framebuffer::Framebuffer;
-use super::rendering_backend::Event;
+use super::rendering_backend::{Event, MouseButton};
 
 const GRID_OFFS_X: u32 = 3;
 const GRID_OFFS_Y: u32 = 3;
@@ -117,8 +117,7 @@ impl State {
     }
 
     fn render_glyph_editor(&mut self) {
-        let sel_idx = self.glyph_sel.1 * 16 + self.glyph_sel.0;
-        let sel_glyph = &self.font.glyphs[sel_idx as usize];
+        let sel_glyph = &self.font.glyphs[self.get_selected_index()];
         let fh = self.font.height as u32;
         let fw = self.font.width as u32;
 
@@ -150,17 +149,22 @@ impl State {
 
                 if self.drawing {
                     let (hov_x, hov_y) = self.editor_hov;
-                    let sel_idx = self.glyph_sel.1 * 16 + self.glyph_sel.0;
-                    let sel_glyph = &mut self.font.glyphs[sel_idx as usize];
+                    let sel_idx = self.get_selected_index();
+                    let sel_glyph = &mut self.font.glyphs[sel_idx];
 
                     sel_glyph.set_to(hov_x as usize, hov_y as usize, self.drawing_sets_bits_to);
                 }
             }
-            Event::MousePress(x, y) => {
+            Event::MousePress(button, x, y) => {
                 self.detect_mouse_hover(x, y);
 
                 if self.inside_glyphs_area {
                     self.glyph_sel = self.glyph_hov;
+
+                    if button == MouseButton::Right {
+                        let sel_idx = self.get_selected_index();
+                        self.font.glyphs[sel_idx].clear_all();
+                    }
                     return;
                 }
 
@@ -168,8 +172,8 @@ impl State {
                     let (hov_x, hov_y) = self.editor_hov;
                     let (hov_x, hov_y) = (hov_x as usize, hov_y as usize);
 
-                    let sel_idx = self.glyph_sel.1 * 16 + self.glyph_sel.0;
-                    let sel_glyph = &mut self.font.glyphs[sel_idx as usize];
+                    let sel_idx = self.get_selected_index();
+                    let sel_glyph = &mut self.font.glyphs[sel_idx];
 
                     if !self.drawing {
                         self.drawing = true;
@@ -226,6 +230,12 @@ impl State {
         }
 
         self.inside_editor_area = false;
+    }
+
+    fn get_selected_index(&self) -> usize {
+        let (sel_x, sel_y) = self.glyph_sel;
+        let sel_idx = sel_y * 16 + sel_x;
+        sel_idx as usize
     }
 }
 
@@ -313,5 +323,9 @@ impl BitMatrix {
         let w: usize = self.width.into();
 
         self.data[y * w + x]
+    }
+
+    fn clear_all(&mut self) {
+        self.data.fill(false);
     }
 }
