@@ -1,4 +1,6 @@
-use super::{Event, MouseButton, RenderingBackend};
+#![allow(non_upper_case_globals)] // rust-lang/rust #39371
+
+use super::{Event, KeyButton, MouseButton, RenderingBackend};
 use std::ffi::{c_int, c_void, CStr, CString};
 use std::mem::{size_of, MaybeUninit};
 use std::ptr;
@@ -31,7 +33,6 @@ impl Sdl2Backend {
         (ms as f64) / 1000.0
     }
 
-    #[allow(non_upper_case_globals)] // rust-lang/rust #39371
     fn get_events(&mut self, state: &mut State) -> bool {
         let mut event = MaybeUninit::uninit();
 
@@ -41,7 +42,18 @@ impl Sdl2Backend {
 
                 match ret_event.type_ {
                     SDL_EventType_SDL_QUIT => return false,
-                    SDL_EventType_SDL_KEYDOWN => return false, // CBA
+                    SDL_EventType_SDL_KEYDOWN => {
+                        if let Some(key) = Self::key_button_to_enum(ret_event.key.keysym.sym) {
+                            let event = Event::KeyPress(key);
+                            State::events(state, event)
+                        }
+                    }
+                    SDL_EventType_SDL_KEYUP => {
+                        if let Some(key) = Self::key_button_to_enum(ret_event.key.keysym.sym) {
+                            let event = Event::KeyRelease(key);
+                            State::events(state, event)
+                        }
+                    }
                     SDL_EventType_SDL_MOUSEMOTION => {
                         let x = ret_event.motion.x;
                         let y = ret_event.motion.y;
@@ -74,6 +86,39 @@ impl Sdl2Backend {
         }
 
         true
+    }
+
+    fn key_button_to_enum(keycode: i32) -> Option<KeyButton> {
+        match keycode as u32 {
+            SDL_KeyCode_SDLK_ESCAPE => Some(KeyButton::Escape),
+            SDL_KeyCode_SDLK_a => Some(KeyButton::Character('a')),
+            SDL_KeyCode_SDLK_b => Some(KeyButton::Character('b')),
+            SDL_KeyCode_SDLK_c => Some(KeyButton::Character('c')),
+            SDL_KeyCode_SDLK_d => Some(KeyButton::Character('d')),
+            SDL_KeyCode_SDLK_e => Some(KeyButton::Character('e')),
+            SDL_KeyCode_SDLK_f => Some(KeyButton::Character('f')),
+            SDL_KeyCode_SDLK_g => Some(KeyButton::Character('g')),
+            SDL_KeyCode_SDLK_h => Some(KeyButton::Character('h')),
+            SDL_KeyCode_SDLK_i => Some(KeyButton::Character('i')),
+            SDL_KeyCode_SDLK_j => Some(KeyButton::Character('j')),
+            SDL_KeyCode_SDLK_k => Some(KeyButton::Character('k')),
+            SDL_KeyCode_SDLK_l => Some(KeyButton::Character('l')),
+            SDL_KeyCode_SDLK_m => Some(KeyButton::Character('m')),
+            SDL_KeyCode_SDLK_n => Some(KeyButton::Character('n')),
+            SDL_KeyCode_SDLK_o => Some(KeyButton::Character('o')),
+            SDL_KeyCode_SDLK_p => Some(KeyButton::Character('p')),
+            SDL_KeyCode_SDLK_q => Some(KeyButton::Character('q')),
+            SDL_KeyCode_SDLK_r => Some(KeyButton::Character('r')),
+            SDL_KeyCode_SDLK_s => Some(KeyButton::Character('s')),
+            SDL_KeyCode_SDLK_t => Some(KeyButton::Character('t')),
+            SDL_KeyCode_SDLK_u => Some(KeyButton::Character('u')),
+            SDL_KeyCode_SDLK_v => Some(KeyButton::Character('v')),
+            SDL_KeyCode_SDLK_w => Some(KeyButton::Character('w')),
+            SDL_KeyCode_SDLK_x => Some(KeyButton::Character('x')),
+            SDL_KeyCode_SDLK_y => Some(KeyButton::Character('y')),
+            SDL_KeyCode_SDLK_z => Some(KeyButton::Character('z')),
+            _ => None,
+        }
     }
 
     fn mouse_button_to_enum(button_int: u8) -> Option<MouseButton> {

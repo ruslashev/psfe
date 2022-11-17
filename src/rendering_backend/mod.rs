@@ -7,10 +7,18 @@ pub trait RenderingBackend {
 }
 
 pub enum Event {
+    KeyPress(KeyButton),
+    KeyRelease(KeyButton),
     MouseMotion(i32, i32),
     MousePress(MouseButton, i32, i32),
     MouseRelease(i32, i32),
     MouseWheel(i32),
+}
+
+#[derive(PartialEq, Eq)]
+pub enum KeyButton {
+    Character(char),
+    Escape,
 }
 
 #[derive(PartialEq, Eq)]
