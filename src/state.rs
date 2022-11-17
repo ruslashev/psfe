@@ -199,7 +199,7 @@ impl State {
 
                     if !self.drawing {
                         self.drawing = true;
-                        self.drawing_sets_bits_to = !sel_glyph.get(hov_x, hov_y);
+                        self.drawing_sets_bits_to = button == MouseButton::Left;
                     }
 
                     sel_glyph.set_to(hov_x, hov_y, self.drawing_sets_bits_to);
