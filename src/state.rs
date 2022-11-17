@@ -29,6 +29,7 @@ pub struct State {
 
 pub enum Message {
     Quit,
+    ChangeWindowTitle(String),
 }
 
 struct Font {
@@ -171,10 +172,14 @@ impl State {
                 if self.inside_glyphs_area {
                     self.glyph_sel = self.glyph_hov;
 
+                    let title = format!("psfe | index = {}", self.get_selected_index());
+                    self.message_queue.push(Message::ChangeWindowTitle(title));
+
                     if button == MouseButton::Right {
                         let sel_idx = self.get_selected_index();
                         self.font.glyphs[sel_idx].clear_all();
                     }
+
                     return;
                 }
 

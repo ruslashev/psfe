@@ -135,7 +135,17 @@ impl Sdl2Backend {
         for msg in state.message_queue.drain(..) {
             match msg {
                 Message::Quit => self.running = false,
+                Message::ChangeWindowTitle(title) => self.change_window_title(&title),
             }
+        }
+    }
+
+    fn change_window_title(&mut self, title: &str) {
+        let cstring = CString::new(title).unwrap();
+        let char_ptr = cstring.as_ptr();
+
+        unsafe {
+            SDL_SetWindowTitle(self.window, char_ptr);
         }
     }
 }
