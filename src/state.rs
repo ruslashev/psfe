@@ -159,6 +159,7 @@ impl State {
             Event::KeyPress(key) => match key {
                 KeyButton::Escape => self.message_queue.push(Message::Quit),
                 KeyButton::Character('w') => self.save_file(),
+                KeyButton::Character('c') => self.clear_extend_ascii(),
                 _ => (),
             },
             Event::MouseMotion(x, y) => {
@@ -286,6 +287,12 @@ impl State {
         }
 
         file
+    }
+
+    fn clear_extend_ascii(&mut self) {
+        for i in 128..256 {
+            self.font.glyphs[i].clear_all();
+        }
     }
 }
 
