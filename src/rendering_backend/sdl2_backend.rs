@@ -22,6 +22,7 @@ mod bindings {
 use bindings::*;
 
 pub struct Sdl2Backend {
+    running: bool,
     window: *mut SDL_Window,
     renderer: *mut SDL_Renderer,
     texture: *mut SDL_Texture,
@@ -33,7 +34,7 @@ impl Sdl2Backend {
         (ms as f64) / 1000.0
     }
 
-    fn get_events(&mut self, state: &mut State) -> bool {
+    fn get_events(&mut self, state: &mut State) {
         let mut event = MaybeUninit::uninit();
 
         unsafe {
@@ -41,7 +42,7 @@ impl Sdl2Backend {
                 let ret_event = event.assume_init();
 
                 match ret_event.type_ {
-                    SDL_EventType_SDL_QUIT => return false,
+                    SDL_EventType_SDL_QUIT => self.running = false,
                     SDL_EventType_SDL_KEYDOWN => {
                         if let Some(key) = Self::key_button_to_enum(ret_event.key.keysym.sym) {
                             let event = Event::KeyPress(key);
@@ -84,8 +85,6 @@ impl Sdl2Backend {
                 }
             }
         }
-
-        true
     }
 
     fn key_button_to_enum(keycode: i32) -> Option<KeyButton> {
@@ -165,6 +164,7 @@ impl RenderingBackend for Sdl2Backend {
             }
 
             Self {
+                running: true,
                 window,
                 renderer,
                 texture,
@@ -191,17 +191,16 @@ impl RenderingBackend for Sdl2Backend {
         let updates_per_second = 60;
         let dt = 1.0 / f64::from(updates_per_second as i16);
 
-        let mut running = true;
         let mut curr_time = 0.0;
         let mut real_time;
 
-        while running {
+        while self.running {
             real_time = self.current_time();
 
             while curr_time < real_time {
                 curr_time += dt;
 
-                running = self.get_events(&mut state);
+                self.get_events(&mut state);
                 State::update(&mut state, curr_time, dt);
             }
 
