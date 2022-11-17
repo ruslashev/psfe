@@ -1,5 +1,5 @@
 use super::framebuffer::Framebuffer;
-use super::rendering_backend::{Event, MouseButton};
+use super::rendering_backend::{Event, KeyButton, MouseButton};
 
 const GRID_OFFS_X: u32 = 3;
 const GRID_OFFS_Y: u32 = 3;
@@ -9,6 +9,7 @@ const EDITOR_CELL_SIZE: u32 = 16;
 const PSF1_MODE512: u8 = 0x01;
 
 pub struct State {
+    pub message_queue: Vec<Message>,
     pub fb: Framebuffer,
     font: Font,
 
@@ -24,6 +25,10 @@ pub struct State {
 
     drawing: bool,
     drawing_sets_bits_to: bool,
+}
+
+pub enum Message {
+    Quit,
 }
 
 struct Font {
@@ -47,6 +52,7 @@ impl State {
         let fh = font.height as u32;
 
         Self {
+            message_queue: vec![],
             fb: Framebuffer::new(fb_width, fb_height),
             font,
             glyph_hov: (0, 0),
@@ -144,6 +150,10 @@ impl State {
 
     pub fn events(&mut self, event: Event) {
         match event {
+            Event::KeyPress(key) => match key {
+                KeyButton::Escape => self.message_queue.push(Message::Quit),
+                _ => (),
+            },
             Event::MouseMotion(x, y) => {
                 self.detect_mouse_hover(x, y);
 

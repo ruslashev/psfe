@@ -5,7 +5,7 @@ use std::ffi::{c_int, c_void, CStr, CString};
 use std::mem::{size_of, MaybeUninit};
 use std::ptr;
 
-use crate::state::State;
+use crate::state::{Message, State};
 
 #[allow(clippy::approx_constant)]
 #[allow(clippy::upper_case_acronyms)]
@@ -130,6 +130,14 @@ impl Sdl2Backend {
             _ => None,
         }
     }
+
+    fn check_message_queue(&mut self, state: &mut State) {
+        for msg in state.message_queue.drain(..) {
+            match msg {
+                Message::Quit => self.running = false,
+            }
+        }
+    }
 }
 
 impl RenderingBackend for Sdl2Backend {
@@ -201,6 +209,7 @@ impl RenderingBackend for Sdl2Backend {
                 curr_time += dt;
 
                 self.get_events(&mut state);
+                self.check_message_queue(&mut state);
                 State::update(&mut state, curr_time, dt);
             }
 
