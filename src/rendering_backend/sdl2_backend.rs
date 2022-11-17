@@ -46,20 +46,20 @@ impl Sdl2Backend {
                     SDL_EventType_SDL_KEYDOWN => {
                         if let Some(key) = Self::key_button_to_enum(ret_event.key.keysym.sym) {
                             let event = Event::KeyPress(key);
-                            State::events(state, event)
+                            State::events(state, event);
                         }
                     }
                     SDL_EventType_SDL_KEYUP => {
                         if let Some(key) = Self::key_button_to_enum(ret_event.key.keysym.sym) {
                             let event = Event::KeyRelease(key);
-                            State::events(state, event)
+                            State::events(state, event);
                         }
                     }
                     SDL_EventType_SDL_MOUSEMOTION => {
                         let x = ret_event.motion.x;
                         let y = ret_event.motion.y;
                         let event = Event::MouseMotion(x, y);
-                        State::events(state, event)
+                        State::events(state, event);
                     }
                     SDL_EventType_SDL_MOUSEBUTTONDOWN => {
                         let x = ret_event.button.x;
@@ -67,19 +67,19 @@ impl Sdl2Backend {
                         let maybe_button = Self::mouse_button_to_enum(ret_event.button.button);
                         if let Some(button) = maybe_button {
                             let event = Event::MousePress(button, x, y);
-                            State::events(state, event)
+                            State::events(state, event);
                         }
                     }
                     SDL_EventType_SDL_MOUSEBUTTONUP => {
                         let x = ret_event.button.x;
                         let y = ret_event.button.y;
                         let event = Event::MouseRelease(x, y);
-                        State::events(state, event)
+                        State::events(state, event);
                     }
                     SDL_EventType_SDL_MOUSEWHEEL => {
                         let y = ret_event.wheel.y;
                         let event = Event::MouseWheel(y);
-                        State::events(state, event)
+                        State::events(state, event);
                     }
                     _ => continue,
                 }
@@ -206,8 +206,8 @@ impl RenderingBackend for Sdl2Backend {
     }
 
     fn main_loop(&mut self, mut state: State) {
-        let updates_per_second = 60;
-        let dt = 1.0 / f64::from(updates_per_second as i16);
+        let updates_per_second: i16 = 60;
+        let dt = 1.0 / f64::from(updates_per_second);
 
         let mut curr_time = 0.0;
         let mut real_time;

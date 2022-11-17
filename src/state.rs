@@ -299,21 +299,21 @@ impl State {
 impl Font {
     fn from_file(file: &[u8]) -> Option<Self> {
         if file[0..2] == [PSF1_MAGIC0, PSF1_MAGIC1] {
-            return Self::parse_psf1(file);
+            return Some(Self::parse_psf1(file));
         }
 
         None
     }
 
-    fn parse_psf1(file: &[u8]) -> Option<Self> {
+    fn parse_psf1(file: &[u8]) -> Self {
         let height = file[3];
 
-        Some(Self {
+        Self {
             _version: 1,
             width: 8,
             height,
             glyphs: Self::parse_psf1_glyphs(height, file),
-        })
+        }
     }
 
     fn parse_psf1_glyphs(height: u8, file: &[u8]) -> Vec<BitMatrix> {
@@ -393,8 +393,8 @@ impl BitMatrix {
             let mut row = 0;
 
             for x in 0..self.width {
-                let bit = self.get((8 - x - 1) as usize, y as usize) as u8;
-                row |= bit << x;
+                let bit = self.get((8 - x - 1) as usize, y as usize);
+                row |= u8::from(bit) << x;
             }
 
             rows.push(row);
