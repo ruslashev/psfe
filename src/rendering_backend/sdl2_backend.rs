@@ -90,6 +90,7 @@ impl Sdl2Backend {
     fn key_button_to_enum(keycode: i32) -> Option<KeyButton> {
         match keycode as u32 {
             SDL_KeyCode_SDLK_ESCAPE => Some(KeyButton::Escape),
+            SDL_KeyCode_SDLK_MINUS => Some(KeyButton::Minus),
             SDL_KeyCode_SDLK_a => Some(KeyButton::Character('a')),
             SDL_KeyCode_SDLK_b => Some(KeyButton::Character('b')),
             SDL_KeyCode_SDLK_c => Some(KeyButton::Character('c')),

@@ -53,8 +53,7 @@ struct BitMatrix {
 impl State {
     pub fn new(fb_width: u32, fb_height: u32, file: &[u8]) -> Self {
         let font = Font::from_file(file).expect("failed to parse font");
-        let fw = font.width as u32;
-        let fh = font.height as u32;
+        let (editor_offs_x, editor_offs_y) = font.calculate_editor_offset(fb_width, fb_height);
 
         Self {
             message_queue: vec![],
@@ -65,8 +64,8 @@ impl State {
             inside_glyphs_area: false,
             editor_hov: (0, 0),
             inside_editor_area: false,
-            editor_offs_x: fb_width / 2 - fw * EDITOR_CELL_SIZE / 2,
-            editor_offs_y: fb_height / 2 - fh * EDITOR_CELL_SIZE / 2,
+            editor_offs_x,
+            editor_offs_y,
             drawing: false,
             drawing_sets_bits_to: true,
             saves_counter: 0,
@@ -158,6 +157,14 @@ impl State {
         match event {
             Event::KeyPress(key) => match key {
                 KeyButton::Escape => self.message_queue.push(Message::Quit),
+                KeyButton::Minus => {
+                    self.font.decrease_height();
+                    let fb_w = self.fb.width;
+                    let fb_h = self.fb.height;
+                    let (offs_x, offs_y) = self.font.calculate_editor_offset(fb_w, fb_h);
+                    self.editor_offs_x = offs_x;
+                    self.editor_offs_y = offs_y;
+                }
                 KeyButton::Character('w') => self.save_file(),
                 KeyButton::Character('c') => self.clear_extend_ascii(),
                 _ => (),
@@ -343,6 +350,23 @@ impl Font {
 
         glyphs
     }
+
+    fn calculate_editor_offset(&self, fb_width: u32, fb_height: u32) -> (u32, u32) {
+        let fw = self.width as u32;
+        let fh = self.height as u32;
+        let x = fb_width / 2 - fw * EDITOR_CELL_SIZE / 2;
+        let y = fb_height / 2 - fh * EDITOR_CELL_SIZE / 2;
+
+        (x, y)
+    }
+
+    fn decrease_height(&mut self) {
+        self.height -= 1;
+
+        for glyph in &mut self.glyphs {
+            glyph.decrease_height();
+        }
+    }
 }
 
 impl BitMatrix {
@@ -401,5 +425,10 @@ impl BitMatrix {
         }
 
         rows
+    }
+
+    fn decrease_height(&mut self) {
+        self.height -= 1;
+        self.data = self.data.split_off(self.width.into());
     }
 }

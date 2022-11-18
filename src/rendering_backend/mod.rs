@@ -19,6 +19,7 @@ pub enum Event {
 pub enum KeyButton {
     Character(char),
     Escape,
+    Minus,
 }
 
 #[derive(PartialEq, Eq)]
